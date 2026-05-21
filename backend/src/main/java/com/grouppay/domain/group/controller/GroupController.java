@@ -7,6 +7,8 @@ import com.grouppay.domain.group.dto.response.GroupResponse;
 import com.grouppay.domain.group.service.GroupService;
 import com.grouppay.global.api.CommonResponse;
 import com.grouppay.global.api.code.SuccessCode;
+import com.grouppay.global.auth.HostSessionManager;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -37,14 +39,18 @@ public class GroupController {
     @PatchMapping("/{uuid}")
     public ResponseEntity<CommonResponse<GroupResponse>> updateGroup(
             @PathVariable String uuid,
-            @RequestBody @Valid UpdateGroupRequest request) {
+            @RequestBody @Valid UpdateGroupRequest request,
+            HttpSession session) {
+        HostSessionManager.validateHost(session, uuid);
         GroupResponse response = groupService.updateGroup(uuid, request);
         return ResponseEntity.ok(CommonResponse.success(SuccessCode.OK, response));
     }
 
     @DeleteMapping("/{uuid}")
     public ResponseEntity<CommonResponse<Void>> deleteGroup(
-            @PathVariable String uuid) {
+            @PathVariable String uuid,
+            HttpSession session) {
+        HostSessionManager.validateHost(session, uuid);
         groupService.deleteGroup(uuid);
         return ResponseEntity.ok(CommonResponse.success(SuccessCode.OK));
     }
