@@ -22,6 +22,7 @@ public enum ErrorCode {
     AUTH_PIN_MISMATCH(HttpStatus.UNAUTHORIZED, "AUTH_001", "PIN이 일치하지 않습니다."),
 
     // 멤버
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER_000", "존재하지 않는 멤버입니다."),
     MEMBER_NAME_DUPLICATE(HttpStatus.CONFLICT, "MEMBER_001", "이미 존재하는 멤버 이름입니다."),
     MEMBER_NOT_EXPENSE_PAYER(HttpStatus.BAD_REQUEST, "MEMBER_002", "지출을 등록한 멤버만 계좌를 등록할 수 있습니다."),
 
