@@ -2,6 +2,7 @@ export const colors = {
   primary: '#0066cc',
   primaryDark: '#0052a3',
 
+  bgBlack: '#000000',
   bgDark: '#1c1c1e',
   bgLight: '#f2f2f7',
   bgCard: '#ffffff',
