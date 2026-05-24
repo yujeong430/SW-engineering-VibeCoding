@@ -27,6 +27,7 @@ public enum ErrorCode {
     MEMBER_NOT_EXPENSE_PAYER(HttpStatus.BAD_REQUEST, "MEMBER_002", "지출을 등록한 멤버만 계좌를 등록할 수 있습니다."),
 
     // 지출
+    EXPENSE_NOT_FOUND(HttpStatus.NOT_FOUND, "EXPENSE_000", "존재하지 않는 지출입니다."),
     EXPENSE_INVALID_FORMAT(HttpStatus.BAD_REQUEST, "EXPENSE_001", "금액 또는 항목명 형식이 올바르지 않습니다."),
     EXPENSE_SHARE_EMPTY(HttpStatus.BAD_REQUEST, "EXPENSE_002", "분담 대상이 1명 이상이어야 합니다."),
 
