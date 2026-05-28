@@ -23,8 +23,11 @@ public class GroupController {
 
     @PostMapping
     public ResponseEntity<CommonResponse<GroupResponse>> createGroup(
-            @RequestBody @Valid CreateGroupRequest request) {
+            @RequestBody @Valid CreateGroupRequest request,
+            HttpSession session) {
         GroupResponse response = groupService.createGroup(request);
+        // 그룹 생성자는 PIN을 설정한 당사자이므로 방장 권한을 즉시 부여한다.
+        HostSessionManager.grant(session, response.getUuid());
         return ResponseEntity.status(201)
                 .body(CommonResponse.success(SuccessCode.CREATED, response));
     }
