@@ -1,8 +1,5 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../lib/axios'
-import type { CommonResponse } from '../types/common'
-import type { GroupSummary } from '../types/group'
 import AppHeader from '../components/AppHeader'
 import TextField from '../components/TextField'
 import Button from '../components/Button'
@@ -12,8 +9,6 @@ export default function CreateGroupPage() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [pin, setPin] = useState(['', '', '', ''])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const pinRefs = [
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
@@ -26,7 +21,6 @@ export default function CreateGroupPage() {
 
   const handlePinChange = (index: number, value: string) => {
     if (!/^\d?$/.test(value)) return
-    setError('')
     const next = [...pin]
     next[index] = value
     setPin(next)
@@ -41,27 +35,11 @@ export default function CreateGroupPage() {
     }
   }
 
-  const handleSubmit = async () => {
-    if (!isValid || loading) return
-    setLoading(true)
-    setError('')
-    try {
-      const res = await api.post<CommonResponse<GroupSummary>>('/groups', {
-        name: name.trim(),
-        pin: pinValue,
-      })
-      const data = res.data.data
-      if (data) {
-        navigate('/groups/new/done', {
-          state: { uuid: data.uuid, name: data.name },
-        })
-      }
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: CommonResponse<null> } }
-      setError(err.response?.data?.message ?? '그룹 생성에 실패했습니다.')
-    } finally {
-      setLoading(false)
-    }
+  const handleNext = () => {
+    if (!isValid) return
+    navigate('/groups/new/members', {
+      state: { name: name.trim(), pin: pinValue },
+    })
   }
 
   return (
@@ -97,13 +75,11 @@ export default function CreateGroupPage() {
             ))}
           </div>
         </section>
-
-        {error && <p style={styles.errorText}>{error}</p>}
       </div>
 
       <div style={styles.footer}>
-        <Button disabled={!isValid || loading} onClick={handleSubmit}>
-          {loading ? '생성 중…' : '그룹 만들기'}
+        <Button disabled={!isValid} onClick={handleNext}>
+          다음
         </Button>
       </div>
     </div>
@@ -155,12 +131,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: fontWeight.bold,
     color: colors.textPrimary,
     textAlign: 'center' as const,
-  },
-  errorText: {
-    fontSize: typography.md,
-    color: colors.negative,
-    textAlign: 'center' as const,
-    margin: 0,
   },
   footer: {
     padding: `${spacing.lg} ${spacing.xl}`,

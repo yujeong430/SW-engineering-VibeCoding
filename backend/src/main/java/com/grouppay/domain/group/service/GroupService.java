@@ -17,6 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,12 +33,29 @@ public class GroupService {
 
     @Transactional
     public GroupResponse createGroup(CreateGroupRequest request) {
+        List<String> memberNames = request.getMembers() == null ? List.of() : request.getMembers();
+        validateNoDuplicateNames(memberNames);
+
         Group group = Group.builder()
                 .uuid(UUID.randomUUID().toString())
                 .name(request.getName())
                 .pinHash(passwordEncoder.encode(request.getPin()))
                 .build();
-        return new GroupResponse(groupRepository.save(group));
+        groupRepository.save(group);
+
+        if (!memberNames.isEmpty()) {
+            List<Member> members = memberNames.stream()
+                    .map(name -> Member.builder().group(group).name(name).build())
+                    .toList();
+            memberRepository.saveAll(members);
+        }
+        return new GroupResponse(group);
+    }
+
+    private void validateNoDuplicateNames(List<String> names) {
+        if (names != null && new HashSet<>(names).size() != names.size()) {
+            throw new BusinessException(ErrorCode.MEMBER_NAME_DUPLICATE);
+        }
     }
 
     public GroupDetailResponse getGroup(String uuid) {

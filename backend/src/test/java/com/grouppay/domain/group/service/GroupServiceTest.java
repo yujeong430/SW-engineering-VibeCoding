@@ -65,6 +65,38 @@ class GroupServiceTest {
     }
 
     @Test
+    @DisplayName("그룹 생성 성공 - 멤버 동반 등록")
+    void createGroup_withMembers_success() {
+        // given
+        CreateGroupRequest request = mockCreateRequest("제주도 여행", "1234");
+        setMembers(request, List.of("지수", "민호", "서연"));
+        given(passwordEncoder.encode("1234")).willReturn("$hashed$");
+        given(groupRepository.save(any(Group.class))).willAnswer(inv -> inv.getArgument(0));
+
+        // when
+        GroupResponse response = groupService.createGroup(request);
+
+        // then
+        assertThat(response.getName()).isEqualTo("제주도 여행");
+        verify(groupRepository).save(any(Group.class));
+        verify(memberRepository).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("그룹 생성 실패 - 멤버 이름 중복")
+    void createGroup_duplicateMemberNames() {
+        // given
+        CreateGroupRequest request = mockCreateRequest("제주도 여행", "1234");
+        setMembers(request, List.of("지수", "지수"));
+
+        // when & then
+        assertThatThrownBy(() -> groupService.createGroup(request))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.MEMBER_NAME_DUPLICATE));
+    }
+
+    @Test
     @DisplayName("그룹 조회 성공")
     void getGroup_success() {
         // given
@@ -146,6 +178,14 @@ class GroupServiceTest {
             setField(request, "name", name);
             setField(request, "pin", pin);
             return request;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void setMembers(CreateGroupRequest request, List<String> members) {
+        try {
+            setField(request, "members", members);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
