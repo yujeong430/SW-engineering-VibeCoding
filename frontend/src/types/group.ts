@@ -10,6 +10,7 @@ export interface GroupSummary {
 }
 
 export interface GroupDetail extends GroupSummary {
+  isHost: boolean
   members: Member[]
   expenses: ExpenseSummary[]
 }

@@ -4,6 +4,7 @@ import com.grouppay.domain.expense.entity.Expense;
 import com.grouppay.domain.group.entity.Group;
 import com.grouppay.domain.group.entity.GroupStatus;
 import com.grouppay.domain.member.entity.Member;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.util.List;
@@ -14,13 +15,17 @@ public class GroupDetailResponse {
     private final String uuid;
     private final String name;
     private final GroupStatus status;
+
+    @JsonProperty("isHost")
+    private final boolean isHost;
     private final List<MemberSummary> members;
     private final List<ExpenseSummary> expenses;
 
-    public GroupDetailResponse(Group group, List<Member> members, List<Expense> expenses) {
+    public GroupDetailResponse(Group group, List<Member> members, List<Expense> expenses, boolean isHost) {
         this.uuid = group.getUuid();
         this.name = group.getName();
         this.status = group.getStatus();
+        this.isHost = isHost;
         this.members = members.stream().map(MemberSummary::new).toList();
         this.expenses = expenses.stream().map(ExpenseSummary::new).toList();
     }

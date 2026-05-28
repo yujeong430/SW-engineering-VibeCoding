@@ -58,11 +58,11 @@ public class GroupService {
         }
     }
 
-    public GroupDetailResponse getGroup(String uuid) {
+    public GroupDetailResponse getGroup(String uuid, boolean isHost) {
         Group group = findGroupByUuid(uuid);
         List<Member> members = memberRepository.findByGroup(group);
         List<Expense> expenses = expenseRepository.findByGroup(group);
-        return new GroupDetailResponse(group, members, expenses);
+        return new GroupDetailResponse(group, members, expenses, isHost);
     }
 
     @Transactional

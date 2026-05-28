@@ -106,10 +106,11 @@ class GroupServiceTest {
         given(expenseRepository.findByGroup(group)).willReturn(List.of());
 
         // when
-        GroupDetailResponse response = groupService.getGroup("test-uuid");
+        GroupDetailResponse response = groupService.getGroup("test-uuid", true);
 
         // then
         assertThat(response.getName()).isEqualTo("제주도 여행");
+        assertThat(response.isHost()).isTrue();
         assertThat(response.getMembers()).isEmpty();
         assertThat(response.getExpenses()).isEmpty();
     }
@@ -121,7 +122,7 @@ class GroupServiceTest {
         given(groupRepository.findByUuid("invalid-uuid")).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> groupService.getGroup("invalid-uuid"))
+        assertThatThrownBy(() -> groupService.getGroup("invalid-uuid", false))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
                         .isEqualTo(ErrorCode.GROUP_NOT_FOUND));

@@ -34,8 +34,10 @@ public class GroupController {
 
     @GetMapping("/{uuid}")
     public ResponseEntity<CommonResponse<GroupDetailResponse>> getGroup(
-            @PathVariable String uuid) {
-        GroupDetailResponse response = groupService.getGroup(uuid);
+            @PathVariable String uuid,
+            HttpSession session) {
+        boolean isHost = HostSessionManager.isHost(session, uuid);
+        GroupDetailResponse response = groupService.getGroup(uuid, isHost);
         return ResponseEntity.ok(CommonResponse.success(SuccessCode.OK, response));
     }
 

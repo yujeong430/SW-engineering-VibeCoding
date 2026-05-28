@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, Lock, Plus } from 'lucide-react'
+import { ChevronLeft, Lock, Plus, Crown } from 'lucide-react'
 import api from '../lib/axios'
 import { formatWon } from '../lib/format'
 import Avatar from '../components/Avatar'
 import Button from '../components/Button'
+import PinAuthSheet from '../components/PinAuthSheet'
 import type { CommonResponse } from '../types/common'
 import type { GroupDetail } from '../types/group'
 import { colors, typography, fontWeight, spacing, radius } from '../styles/tokens'
@@ -15,25 +16,23 @@ export default function GroupPage() {
   const [group, setGroup] = useState<GroupDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showAuth, setShowAuth] = useState(false)
 
-  useEffect(() => {
-    let active = true
-    api
-      .get<CommonResponse<GroupDetail>>(`/groups/${uuid}`)
-      .then((res) => {
-        if (active) setGroup(res.data.data)
-      })
-      .catch((e: unknown) => {
-        const err = e as { response?: { data?: CommonResponse<null> } }
-        if (active) setError(err.response?.data?.message ?? '그룹을 불러오지 못했습니다.')
-      })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
-    return () => {
-      active = false
+  const fetchGroup = useCallback(async () => {
+    try {
+      const res = await api.get<CommonResponse<GroupDetail>>(`/groups/${uuid}`)
+      setGroup(res.data.data)
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: CommonResponse<null> } }
+      setError(err.response?.data?.message ?? '그룹을 불러오지 못했습니다.')
+    } finally {
+      setLoading(false)
     }
   }, [uuid])
+
+  useEffect(() => {
+    fetchGroup()
+  }, [fetchGroup])
 
   const colorIndexOf = useMemo(() => {
     const map = new Map<number, number>()
@@ -54,7 +53,13 @@ export default function GroupPage() {
     return <div style={styles.center}>{error || '그룹을 찾을 수 없습니다.'}</div>
   }
 
+  const { isHost } = group
   const isSettled = group.status === 'SETTLED'
+
+  const handleAuthSuccess = () => {
+    setShowAuth(false)
+    fetchGroup()
+  }
 
   return (
     <div style={styles.container}>
@@ -62,10 +67,17 @@ export default function GroupPage() {
         <button style={styles.iconBtn} onClick={() => navigate(-1)} aria-label="뒤로 가기">
           <ChevronLeft size={24} strokeWidth={2.5} />
         </button>
-        <button style={styles.hostBtn}>
-          <Lock size={14} strokeWidth={2.5} />
-          방장 전환
-        </button>
+        {isHost ? (
+          <span style={styles.hostBadge}>
+            <Crown size={14} strokeWidth={2.5} />
+            방장
+          </span>
+        ) : (
+          <button style={styles.hostBtn} onClick={() => setShowAuth(true)}>
+            <Lock size={14} strokeWidth={2.5} />
+            방장 전환
+          </button>
+        )}
       </header>
 
       <div style={styles.body}>
@@ -94,36 +106,56 @@ export default function GroupPage() {
 
         <span style={styles.listLabel}>지출 내역 {group.expenses.length}건</span>
 
-        <ul style={styles.expenseList}>
-          {group.expenses.map((e, i) => (
-            <li
-              key={e.id}
-              style={{
-                ...styles.expenseItem,
-                ...(i === group.expenses.length - 1 ? { borderBottom: 'none' } : {}),
-              }}
-            >
-              <Avatar name={e.payerName} colorIndex={colorIndexOf(e.payerId)} size={40} />
-              <div style={styles.expenseInfo}>
-                <span style={styles.expenseTitle}>{e.title}</span>
-                <span style={styles.expenseMeta}>
-                  {e.payerName} 결제 · {e.shareMemberIds.length}명 분담
-                </span>
-              </div>
-              <span style={styles.expenseAmount}>{formatWon(e.amount)}</span>
-            </li>
-          ))}
-        </ul>
+        {group.expenses.length === 0 ? (
+          <div style={styles.empty}>아직 등록된 지출이 없어요</div>
+        ) : (
+          <ul style={styles.expenseList}>
+            {group.expenses.map((e, i) => (
+              <li
+                key={e.id}
+                style={{
+                  ...styles.expenseItem,
+                  ...(i === group.expenses.length - 1 ? { borderBottom: 'none' } : {}),
+                }}
+              >
+                <Avatar name={e.payerName} colorIndex={colorIndexOf(e.payerId)} size={40} />
+                <div style={styles.expenseInfo}>
+                  <span style={styles.expenseTitle}>{e.title}</span>
+                  <span style={styles.expenseMeta}>
+                    {e.payerName} 결제 · {e.shareMemberIds.length}명 분담
+                  </span>
+                </div>
+                <span style={styles.expenseAmount}>{formatWon(e.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div style={styles.footer}>
-        <Button onClick={() => navigate(`/groups/${uuid}/expenses/new`)}>
-          <span style={styles.addBtnInner}>
-            <Plus size={18} strokeWidth={2.5} />
-            지출 추가
-          </span>
-        </Button>
+        {isHost && !isSettled && (
+          <Button onClick={() => navigate(`/groups/${uuid}/settle`)}>정산하기</Button>
+        )}
+        {!isSettled && (
+          <Button
+            variant={isHost ? 'text' : 'primary'}
+            onClick={() => navigate(`/groups/${uuid}/expenses/new`)}
+          >
+            <span style={styles.addBtnInner}>
+              <Plus size={18} strokeWidth={2.5} />
+              지출 추가
+            </span>
+          </Button>
+        )}
       </div>
+
+      {showAuth && (
+        <PinAuthSheet
+          uuid={uuid}
+          onClose={() => setShowAuth(false)}
+          onSuccess={handleAuthSuccess}
+        />
+      )}
     </div>
   )
 }
@@ -171,6 +203,17 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: typography.sm,
     fontWeight: fontWeight.semibold,
     cursor: 'pointer',
+  },
+  hostBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing.xs,
+    padding: `${spacing.sm} ${spacing.md}`,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(0, 102, 204, 0.1)',
+    color: colors.primary,
+    fontSize: typography.sm,
+    fontWeight: fontWeight.bold,
   },
   body: {
     flex: 1,
@@ -237,6 +280,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: fontWeight.medium,
     margin: `${spacing['2xl']} 0 ${spacing.md}`,
   },
+  empty: {
+    padding: `${spacing['3xl']} 0`,
+    textAlign: 'center',
+    color: colors.textTertiary,
+    fontSize: typography.md,
+  },
   expenseList: {
     listStyle: 'none',
     margin: 0,
@@ -280,6 +329,9 @@ const styles: Record<string, React.CSSProperties> = {
     padding: `${spacing.lg} ${spacing.xl}`,
     paddingBottom: 32,
     backgroundColor: colors.bgLight,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacing.sm,
   },
   addBtnInner: {
     display: 'inline-flex',
