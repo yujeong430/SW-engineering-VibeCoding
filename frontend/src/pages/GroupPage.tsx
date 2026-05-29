@@ -326,7 +326,13 @@ export default function GroupPage() {
                 style={{
                   ...styles.expenseItem,
                   ...(i === group.expenses.length - 1 ? { borderBottom: 'none' } : {}),
+                  cursor: !manageExpenses && !isSettled ? 'pointer' : 'default',
                 }}
+                onClick={
+                  !manageExpenses && !isSettled
+                    ? () => navigate(`/groups/${uuid}/expenses/${e.id}/edit`)
+                    : undefined
+                }
               >
                 <Avatar name={e.payerName} colorIndex={colorIndexOf(e.payerId)} size={40} />
                 <div style={styles.expenseInfo}>

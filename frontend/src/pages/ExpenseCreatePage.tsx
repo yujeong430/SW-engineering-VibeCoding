@@ -14,7 +14,8 @@ import { colors, typography, fontWeight, spacing, radius } from '../styles/token
 
 export default function ExpenseCreatePage() {
   const navigate = useNavigate()
-  const { uuid = '' } = useParams()
+  const { uuid = '', expenseId } = useParams()
+  const isEdit = Boolean(expenseId)
 
   const [members, setMembers] = useState<MemberSummary[]>([])
   const [loading, setLoading] = useState(true)
@@ -32,14 +33,26 @@ export default function ExpenseCreatePage() {
       .get<CommonResponse<GroupDetail>>(`/groups/${uuid}`)
       .then((res) => {
         const data = res.data.data
-        if (data) {
-          setMembers(data.members)
-          setShareIds(data.members.map((m) => m.id)) // 기본값: 전체 멤버 (FR-14)
+        if (!data) return
+        setMembers(data.members)
+
+        if (isEdit && expenseId) {
+          // 수정 모드: 그룹 조회 응답에서 해당 지출 프리필
+          const target = data.expenses.find((e) => e.id === Number(expenseId))
+          if (target) {
+            setAmount(String(target.amount))
+            setTitle(target.title)
+            setPayerId(target.payerId)
+            setShareIds(target.shareMemberIds)
+          }
+        } else {
+          // 생성 모드: 기본값 전체 멤버 선택 (FR-14)
+          setShareIds(data.members.map((m) => m.id))
         }
       })
       .catch(() => setLoadError('그룹 정보를 불러오지 못했습니다.'))
       .finally(() => setLoading(false))
-  }, [uuid])
+  }, [uuid, expenseId, isEdit])
 
   const amountValue = Number(amount) || 0
   const allSelected = members.length > 0 && shareIds.length === members.length
@@ -75,19 +88,29 @@ export default function ExpenseCreatePage() {
     setSubmitting(true)
     setError('')
     try {
-      await api.post<CommonResponse<ExpenseDetail>>(`/groups/${uuid}/expenses`, {
+      const payload = {
         title: title.trim(),
         amount: amountValue,
         payerId,
         shareMemberIds: shareIds,
-      })
-      // 결제자 계좌 등록 안내 (FR-07)
-      navigate(`/groups/${uuid}/members/${payerId}/account`, {
-        state: { from: 'expense', expenseTitle: title.trim() },
-      })
+      }
+
+      if (isEdit) {
+        await api.patch<CommonResponse<ExpenseDetail>>(
+          `/groups/${uuid}/expenses/${expenseId}`,
+          payload,
+        )
+        navigate(`/groups/${uuid}`)
+      } else {
+        await api.post<CommonResponse<ExpenseDetail>>(`/groups/${uuid}/expenses`, payload)
+        // 결제자 계좌 등록 안내 (FR-07)
+        navigate(`/groups/${uuid}/members/${payerId}/account`, {
+          state: { from: 'expense', expenseTitle: title.trim() },
+        })
+      }
     } catch (e: unknown) {
       const err = e as { response?: { data?: CommonResponse<null> } }
-      setError(err.response?.data?.message ?? '지출 등록에 실패했습니다.')
+      setError(err.response?.data?.message ?? '저장에 실패했습니다.')
     } finally {
       setSubmitting(false)
     }
@@ -102,7 +125,10 @@ export default function ExpenseCreatePage() {
 
   return (
     <div style={styles.container}>
-      <AppHeader title="지출 추가" onBack={() => navigate(-1)} />
+      <AppHeader
+        title={isEdit ? '지출 수정' : '지출 추가'}
+        onBack={() => navigate(-1)}
+      />
 
       <div style={styles.body}>
         <section style={styles.section}>
@@ -231,7 +257,7 @@ export default function ExpenseCreatePage() {
 
       <div style={styles.footer}>
         <Button disabled={!isValid || submitting} onClick={handleSubmit}>
-          {submitting ? '저장 중…' : '저장'}
+          {submitting ? '저장 중…' : isEdit ? '수정 완료' : '저장'}
         </Button>
       </div>
     </div>

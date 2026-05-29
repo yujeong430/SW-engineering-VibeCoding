@@ -79,6 +79,7 @@ public class ExpenseService {
 
         expense.update(payer, request.getTitle(), request.getAmount());
         expenseShareRepository.deleteByExpense(expense);
+        expenseShareRepository.flush(); // DELETE를 즉시 DB에 반영 후 INSERT (UK 중복 방지)
 
         List<ExpenseShare> shares = createShares(expense, shareMembers, request.getAmount());
         expenseShareRepository.saveAll(shares);

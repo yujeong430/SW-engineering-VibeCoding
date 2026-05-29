@@ -18,6 +18,7 @@ export default function App() {
           <Route path="/groups/new/done" element={<GroupCreatedPage />} />
           <Route path="/groups/:uuid" element={<GroupPage />} />
           <Route path="/groups/:uuid/expenses/new" element={<ExpenseCreatePage />} />
+          <Route path="/groups/:uuid/expenses/:expenseId/edit" element={<ExpenseCreatePage />} />
           <Route
             path="/groups/:uuid/members/:memberId/account"
             element={<AccountRegisterPage />}

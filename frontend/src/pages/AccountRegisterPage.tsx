@@ -146,11 +146,6 @@ export default function AccountRegisterPage() {
         <Button disabled={!isValid || submitting} onClick={handleSave}>
           {submitting ? '저장 중…' : '계좌 저장'}
         </Button>
-        {from === 'expense' && (
-          <Button variant="text" onClick={() => navigate(`/groups/${uuid}`)}>
-            다음에 할게요
-          </Button>
-        )}
       </div>
     </div>
   )
