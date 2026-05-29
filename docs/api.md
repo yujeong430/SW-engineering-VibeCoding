@@ -175,9 +175,7 @@
     "members": [
       {
         "id": 1,
-        "name": "민수",
-        "bankName": "카카오뱅크",
-        "accountNo": "3333-01-1234567"
+        "name": "민수"
       }
     ],
     "expenses": [
@@ -195,10 +193,11 @@
 }
 ```
 
-| 필드      | 설명                                                        |
-| --------- | ----------------------------------------------------------- |
-| isHost    | 현재 세션의 방장 여부 (그룹 화면의 방장/참여자 뷰 분기용)    |
-| expenses  | 그룹 메인 화면용 지출 목록 (결제자명·분담 멤버 포함)         |
+| 필드      | 설명                                                               |
+| --------- | ------------------------------------------------------------------ |
+| isHost    | 현재 세션의 방장 여부 (그룹 화면의 방장/참여자 뷰 분기용)           |
+| members   | id·name만 포함. 계좌번호는 프라이버시상 제외 (FR-09 정산 결과에서만 노출) |
+| expenses  | 그룹 메인 화면용 지출 목록 (결제자명·분담 멤버 포함)                |
 
 **에러**: GROUP_001
 
@@ -367,7 +366,33 @@
 
 ---
 
-### 6.2 계좌 등록/수정 — `PATCH /api/v1/groups/{uuid}/members/{memberId}` (FR-07, UC-04)
+### 6.2 멤버 단건 조회 — `GET /api/v1/groups/{uuid}/members/{memberId}` (FR-07)
+
+권한: 누구나. 계좌 수정 화면의 프리필 용도로 단일 멤버의 계좌 정보를 반환한다.
+
+**Response 200**
+
+```json
+{
+  "success": true,
+  "code": "COMMON_200",
+  "message": "요청이 성공했습니다.",
+  "data": {
+    "id": 1,
+    "name": "민수",
+    "bankName": "카카오뱅크",
+    "accountNo": "3333-01-1234567"
+  }
+}
+```
+
+> 그룹 조회(5.2)는 프라이버시상 계좌번호를 제외하므로, 계좌 수정 프리필이 필요할 때만 본 단건 조회로 노출한다.
+
+**에러**: GROUP_001, MEMBER_NOT_FOUND(다른 그룹/없는 멤버)
+
+---
+
+### 6.3 계좌 등록/수정 — `PATCH /api/v1/groups/{uuid}/members/{memberId}` (FR-07, UC-04)
 
 권한: 누구나 (단, 지출 등록 멤버에 한함)
 
@@ -397,7 +422,7 @@
 
 ---
 
-### 6.3 멤버 제거 — `DELETE /api/v1/groups/{uuid}/members/{memberId}` (FR-08, UC-04)
+### 6.4 멤버 제거 — `DELETE /api/v1/groups/{uuid}/members/{memberId}` (FR-08, UC-04)
 
 권한: 방장. 지출 내역이 있으면 관련 지출 함께 삭제.
 
@@ -613,15 +638,16 @@
 
 | 엔드포인트                          | FR          | UC    | 권한   |
 | ----------------------------------- | ----------- | ----- | ------ |
-| POST /groups                        | FR-01       | UC-01 | 누구나 |
-| GET /groups/{uuid}                  | FR-04       | UC-02 | 누구나 |
-| PATCH /groups/{uuid}                | FR-02       | UC-03 | 방장   |
-| DELETE /groups/{uuid}               | FR-03       | UC-03 | 방장   |
-| POST /groups/{uuid}/auth            | FR-05       | UC-03 | 누구나 |
-| POST /groups/{uuid}/settle          | FR-18,19,20 | UC-06 | 방장   |
-| POST /groups/{uuid}/members         | FR-06       | UC-04 | 방장   |
-| PATCH /groups/{uuid}/members/{id}   | FR-07       | UC-04 | 누구나 |
-| DELETE /groups/{uuid}/members/{id}  | FR-08       | UC-04 | 방장   |
+| POST /groups                        | FR-01, FR-06 | UC-01 | 누구나 |
+| GET /groups/{uuid}                  | FR-04        | UC-02 | 누구나 |
+| PATCH /groups/{uuid}                | FR-02        | UC-03 | 방장   |
+| DELETE /groups/{uuid}               | FR-03        | UC-03 | 방장   |
+| POST /groups/{uuid}/auth            | FR-05        | UC-03 | 누구나 |
+| POST /groups/{uuid}/settle          | FR-18,19,20  | UC-06 | 방장   |
+| POST /groups/{uuid}/members         | FR-06        | UC-04 | 방장   |
+| GET /groups/{uuid}/members/{id}     | FR-07        | UC-04 | 누구나 |
+| PATCH /groups/{uuid}/members/{id}   | FR-07        | UC-04 | 누구나 |
+| DELETE /groups/{uuid}/members/{id}  | FR-08        | UC-04 | 방장   |
 | POST /groups/{uuid}/expenses        | FR-10,11,14 | UC-05 | 누구나 |
 | GET /groups/{uuid}/expenses         | FR-22       | UC-07 | 누구나 |
 | PATCH /groups/{uuid}/expenses/{id}  | FR-12       | UC-05 | 누구나 |

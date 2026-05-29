@@ -447,9 +447,10 @@ GitHub Push (main 브랜치)
 
 | 메서드 | URL                                        | 설명           | 권한   | FR    |
 | ------ | ------------------------------------------ | -------------- | ------ | ----- |
-| POST   | `/api/v1/groups/{uuid}/members`            | 멤버 추가      | 방장   | FR-06 |
-| PATCH  | `/api/v1/groups/{uuid}/members/{memberId}` | 계좌 등록/수정 | 누구나 | FR-07 |
-| DELETE | `/api/v1/groups/{uuid}/members/{memberId}` | 멤버 제거      | 방장   | FR-08 |
+| POST   | `/api/v1/groups/{uuid}/members`            | 멤버 추가            | 방장   | FR-06 |
+| GET    | `/api/v1/groups/{uuid}/members/{memberId}` | 멤버 단건 조회(계좌) | 누구나 | FR-07 |
+| PATCH  | `/api/v1/groups/{uuid}/members/{memberId}` | 계좌 등록/수정       | 누구나 | FR-07 |
+| DELETE | `/api/v1/groups/{uuid}/members/{memberId}` | 멤버 제거            | 방장   | FR-08 |
 
 **지출**
 

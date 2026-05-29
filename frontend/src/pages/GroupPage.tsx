@@ -67,6 +67,12 @@ export default function GroupPage() {
     [group],
   )
 
+  // 계좌 등록 가능한 멤버 = 지출을 낸 멤버(payer) (FR-07)
+  const payerIds = useMemo(
+    () => new Set(group?.expenses.map((e) => e.payerId) ?? []),
+    [group],
+  )
+
   const withError = async (fn: () => Promise<void>, fallback: string) => {
     setActionError('')
     try {
@@ -221,20 +227,38 @@ export default function GroupPage() {
         </span>
 
         <div style={styles.memberRow}>
-          {group.members.map((m, i) => (
-            <div key={m.id} style={styles.memberItemWrap}>
-              <Avatar name={m.name} colorIndex={i} size={52} showName />
-              {manageMembers && (
-                <button
-                  style={styles.removeMemberBtn}
-                  onClick={() => removeMember(m.id)}
-                  aria-label={`${m.name} 삭제`}
-                >
-                  <X size={14} strokeWidth={3} />
-                </button>
-              )}
-            </div>
-          ))}
+          {group.members.map((m, i) => {
+            const isPayer = payerIds.has(m.id)
+            const tappable = !manageMembers && isPayer
+            return (
+              <div
+                key={m.id}
+                style={{
+                  ...styles.memberItemWrap,
+                  cursor: tappable ? 'pointer' : 'default',
+                }}
+                onClick={
+                  tappable
+                    ? () =>
+                        navigate(`/groups/${uuid}/members/${m.id}/account`, {
+                          state: { from: 'group' },
+                        })
+                    : undefined
+                }
+              >
+                <Avatar name={m.name} colorIndex={i} size={52} showName />
+                {manageMembers && (
+                  <button
+                    style={styles.removeMemberBtn}
+                    onClick={() => removeMember(m.id)}
+                    aria-label={`${m.name} 삭제`}
+                  >
+                    <X size={14} strokeWidth={3} />
+                  </button>
+                )}
+              </div>
+            )
+          })}
           {manageMembers && (
             <button style={styles.addMemberChip} onClick={() => setAddingMember(true)}>
               <span style={styles.addCircle}>

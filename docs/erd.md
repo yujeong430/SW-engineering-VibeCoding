@@ -156,8 +156,8 @@ erDiagram
 | 컬럼       | 타입        | 제약                               | 설명             |
 | ---------- | ----------- | ---------------------------------- | ---------------- |
 | id         | BIGINT      | PK, AUTO_INCREMENT                 | 내부 식별자      |
-| group_id   | BIGINT      | FK → groups(id), ON DELETE CASCADE | 소속 그룹        |
-| payer_id   | BIGINT      | FK → members(id)                   | 낸 사람          |
+| group_id   | BIGINT      | FK → groups(id), ON DELETE CASCADE  | 소속 그룹        |
+| payer_id   | BIGINT      | FK → members(id), ON DELETE CASCADE | 낸 사람          |
 | title      | VARCHAR(50) | NOT NULL                           | 항목명 (1~50자)  |
 | amount     | INT         | NOT NULL, CHECK(amount >= 10)      | 금액 (10원 단위) |
 | created_at | DATETIME    | NOT NULL                           | 생성 시각        |
@@ -168,8 +168,8 @@ erDiagram
 | 컬럼         | 타입   | 제약                                 | 설명           |
 | ------------ | ------ | ------------------------------------ | -------------- |
 | id           | BIGINT | PK, AUTO_INCREMENT                   | 내부 식별자    |
-| expense_id   | BIGINT | FK → expenses(id), ON DELETE CASCADE | 대상 지출      |
-| member_id    | BIGINT | FK → members(id)                     | 분담 대상 멤버 |
+| expense_id   | BIGINT | FK → expenses(id), ON DELETE CASCADE  | 대상 지출      |
+| member_id    | BIGINT | FK → members(id), ON DELETE CASCADE   | 분담 대상 멤버 |
 | share_amount | INT    | NOT NULL                             | 멤버별 부담액  |
 
 > 제약: `UNIQUE(expense_id, member_id)` — 한 지출에 같은 멤버 중복 분담 불가.
@@ -190,9 +190,9 @@ erDiagram
 | 컬럼           | 타입   | 제약                                    | 설명           |
 | -------------- | ------ | --------------------------------------- | -------------- |
 | id             | BIGINT | PK, AUTO_INCREMENT                      | 내부 식별자    |
-| settlement_id  | BIGINT | FK → settlements(id), ON DELETE CASCADE | 소속 정산      |
-| from_member_id | BIGINT | FK → members(id)                        | 정산 하는 멤버 |
-| to_member_id   | BIGINT | FK → members(id)                        | 정산 받는 멤버 |
+| settlement_id  | BIGINT | FK → settlements(id), ON DELETE CASCADE  | 소속 정산      |
+| from_member_id | BIGINT | FK → members(id), ON DELETE CASCADE      | 정산 하는 멤버 |
+| to_member_id   | BIGINT | FK → members(id), ON DELETE CASCADE      | 정산 받는 멤버 |
 | amount         | INT    | NOT NULL, CHECK(amount > 0)             | 송금액         |
 
 > 최소 송금 산출(FR-20) 결과 1건이 1행에 대응한다.
@@ -206,14 +206,15 @@ erDiagram
 | groups — members                   | 1 : N      | CASCADE                         | FR-03, FR-06 |
 | groups — expenses                  | 1 : N      | CASCADE                         | FR-03, FR-10 |
 | groups — settlements               | 1 : 0..1   | CASCADE                         | FR-18        |
-| members — expenses (payer)         | 1 : N      | RESTRICT(앱 제어)               | FR-10        |
+| members — expenses (payer)         | 1 : N      | CASCADE                         | FR-10        |
 | expenses — expense_shares          | 1 : N (≥1) | CASCADE                         | FR-11        |
-| members — expense_shares           | 1 : N      | CASCADE(멤버 제거 시 함께 삭제) | FR-08        |
+| members — expense_shares           | 1 : N      | CASCADE                         | FR-08        |
 | settlements — settlement_transfers | 1 : N (≥1) | CASCADE                         | FR-20        |
-| members — settlement_transfers     | 1 : N      | -                               | FR-20        |
+| members — settlement_transfers     | 1 : N      | CASCADE                         | FR-20        |
 
-> 멤버 제거(FR-08): 해당 멤버의 지출·분담 내역이 있으면 경고 후 함께 삭제한다.
-> payer_id 참조 무결성은 애플리케이션 계층에서 "지출 동반 삭제"로 처리한다.
+> 모든 FK에 `ON DELETE CASCADE`를 적용한다. 그룹 삭제 시 멤버·지출·정산·분담·송금이 DB 레벨에서 연쇄 삭제된다(FR-03).
+> 멤버 제거(FR-08) 시에도 해당 멤버의 지출·분담·송금 데이터가 CASCADE로 함께 삭제된다.
+> 이는 JPA `@OnDelete(action = OnDeleteAction.CASCADE)` + `ddl-auto: create`로 실제 DDL에 반영된다.
 
 ---
 

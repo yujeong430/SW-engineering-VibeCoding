@@ -81,7 +81,10 @@ export default function ExpenseCreatePage() {
         payerId,
         shareMemberIds: shareIds,
       })
-      navigate(`/groups/${uuid}`)
+      // 결제자 계좌 등록 안내 (FR-07)
+      navigate(`/groups/${uuid}/members/${payerId}/account`, {
+        state: { from: 'expense', expenseTitle: title.trim() },
+      })
     } catch (e: unknown) {
       const err = e as { response?: { data?: CommonResponse<null> } }
       setError(err.response?.data?.message ?? '지출 등록에 실패했습니다.')

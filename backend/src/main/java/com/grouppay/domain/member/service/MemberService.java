@@ -41,6 +41,15 @@ public class MemberService {
         return new MemberResponse(memberRepository.save(member));
     }
 
+    public MemberResponse getMember(String uuid, Long memberId) {
+        groupService.findGroupByUuid(uuid);
+        Member member = findMemberById(memberId);
+        if (!member.getGroup().getUuid().equals(uuid)) {
+            throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
+        }
+        return new MemberResponse(member);
+    }
+
     @Transactional
     public MemberResponse updateAccount(String uuid, Long memberId, UpdateAccountRequest request) {
         Group group = groupService.findGroupByUuid(uuid);

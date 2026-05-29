@@ -99,6 +99,39 @@ class MemberServiceTest {
     }
 
     @Test
+    @DisplayName("멤버 계좌 조회 성공")
+    void getMember_success() {
+        // given
+        Member member = Member.builder().group(openGroup).name("민수").build();
+        member.updateAccount("카카오뱅크", "3333-01-1234567");
+        given(groupService.findGroupByUuid("test-uuid")).willReturn(openGroup);
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+
+        // when
+        MemberResponse response = memberService.getMember("test-uuid", 1L);
+
+        // then
+        assertThat(response.getName()).isEqualTo("민수");
+        assertThat(response.getBankName()).isEqualTo("카카오뱅크");
+        assertThat(response.getAccountNo()).isEqualTo("3333-01-1234567");
+    }
+
+    @Test
+    @DisplayName("멤버 계좌 조회 실패 - 다른 그룹의 멤버")
+    void getMember_notInGroup() {
+        // given
+        Member member = Member.builder().group(settledGroup).name("민수").build();
+        given(groupService.findGroupByUuid("test-uuid")).willReturn(openGroup);
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+
+        // when & then
+        assertThatThrownBy(() -> memberService.getMember("test-uuid", 1L))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    @Test
     @DisplayName("계좌 등록 성공")
     void updateAccount_success() {
         // given

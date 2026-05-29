@@ -31,6 +31,14 @@ public class MemberController {
                 .body(CommonResponse.success(SuccessCode.CREATED, response));
     }
 
+    @GetMapping("/{memberId}")
+    public ResponseEntity<CommonResponse<MemberResponse>> getMember(
+            @PathVariable String uuid,
+            @PathVariable Long memberId) {
+        MemberResponse response = memberService.getMember(uuid, memberId);
+        return ResponseEntity.ok(CommonResponse.success(SuccessCode.OK, response));
+    }
+
     @PatchMapping("/{memberId}")
     public ResponseEntity<CommonResponse<MemberResponse>> updateAccount(
             @PathVariable String uuid,
