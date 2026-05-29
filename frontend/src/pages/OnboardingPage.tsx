@@ -27,9 +27,6 @@ export default function OnboardingPage() {
 
       <div style={styles.actions}>
         <Button onClick={() => navigate('/groups/new')}>새 그룹 만들기</Button>
-        <Button variant="outline" disabled style={styles.outlineDark}>
-          초대 링크로 참여하기
-        </Button>
         <p style={styles.hint}>링크를 받은 누구나 바로 들어올 수 있어요</p>
       </div>
     </div>
@@ -88,10 +85,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: spacing.md,
-  },
-  outlineDark: {
-    color: colors.textOnDark,
-    border: '1px solid rgba(255, 255, 255, 0.2)',
   },
   hint: {
     fontSize: typography.sm,
