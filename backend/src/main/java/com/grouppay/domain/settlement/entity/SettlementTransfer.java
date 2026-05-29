@@ -6,6 +6,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name = "settlement_transfers")
@@ -19,14 +21,17 @@ public class SettlementTransfer {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "settlement_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Settlement settlement;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_member_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Member fromMember;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "to_member_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Member toMember;
 
     @Column(nullable = false)
