@@ -1,4 +1,4 @@
-import type { Member } from './member'
+import type { MemberSummary } from './member'
 import type { ExpenseSummary } from './expense'
 
 export type GroupStatus = 'OPEN' | 'SETTLED'
@@ -11,6 +11,6 @@ export interface GroupSummary {
 
 export interface GroupDetail extends GroupSummary {
   isHost: boolean
-  members: Member[]
+  members: MemberSummary[]
   expenses: ExpenseSummary[]
 }

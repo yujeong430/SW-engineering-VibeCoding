@@ -2,6 +2,7 @@ package com.grouppay.domain.group.service;
 
 import com.grouppay.domain.expense.entity.Expense;
 import com.grouppay.domain.expense.repository.ExpenseRepository;
+import com.grouppay.domain.expense.repository.ExpenseShareRepository;
 import com.grouppay.domain.group.dto.request.CreateGroupRequest;
 import com.grouppay.domain.group.dto.request.UpdateGroupRequest;
 import com.grouppay.domain.group.dto.response.GroupDetailResponse;
@@ -29,6 +30,7 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final MemberRepository memberRepository;
     private final ExpenseRepository expenseRepository;
+    private final ExpenseShareRepository expenseShareRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Transactional
@@ -62,7 +64,13 @@ public class GroupService {
         Group group = findGroupByUuid(uuid);
         List<Member> members = memberRepository.findByGroup(group);
         List<Expense> expenses = expenseRepository.findByGroup(group);
-        return new GroupDetailResponse(group, members, expenses, isHost);
+
+        List<GroupDetailResponse.ExpenseSummary> expenseSummaries = expenses.stream()
+                .map(expense -> new GroupDetailResponse.ExpenseSummary(
+                        expense, expenseShareRepository.findByExpense(expense)))
+                .toList();
+
+        return new GroupDetailResponse(group, members, expenseSummaries, isHost);
     }
 
     @Transactional

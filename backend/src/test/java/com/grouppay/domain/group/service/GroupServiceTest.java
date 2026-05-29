@@ -1,6 +1,7 @@
 package com.grouppay.domain.group.service;
 
 import com.grouppay.domain.expense.repository.ExpenseRepository;
+import com.grouppay.domain.expense.repository.ExpenseShareRepository;
 import com.grouppay.domain.group.dto.request.CreateGroupRequest;
 import com.grouppay.domain.group.dto.request.UpdateGroupRequest;
 import com.grouppay.domain.group.dto.response.GroupDetailResponse;
@@ -42,6 +43,9 @@ class GroupServiceTest {
 
     @Mock
     private ExpenseRepository expenseRepository;
+
+    @Mock
+    private ExpenseShareRepository expenseShareRepository;
 
     @Mock
     private BCryptPasswordEncoder passwordEncoder;
