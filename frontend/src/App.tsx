@@ -6,6 +6,8 @@ import GroupCreatedPage from './pages/GroupCreatedPage'
 import GroupPage from './pages/GroupPage'
 import ExpenseCreatePage from './pages/ExpenseCreatePage'
 import AccountRegisterPage from './pages/AccountRegisterPage'
+import SettlementPage from './pages/SettlementPage'
+import ExpenseHistoryPage from './pages/ExpenseHistoryPage'
 
 export default function App() {
   return (
@@ -19,11 +21,12 @@ export default function App() {
           <Route path="/groups/:uuid" element={<GroupPage />} />
           <Route path="/groups/:uuid/expenses/new" element={<ExpenseCreatePage />} />
           <Route path="/groups/:uuid/expenses/:expenseId/edit" element={<ExpenseCreatePage />} />
+          <Route path="/groups/:uuid/settlement" element={<SettlementPage />} />
+          <Route path="/groups/:uuid/expenses" element={<ExpenseHistoryPage />} />
           <Route
             path="/groups/:uuid/members/:memberId/account"
             element={<AccountRegisterPage />}
           />
-          {/* 이후 페이지 추가 예정 */}
         </Routes>
       </div>
     </BrowserRouter>

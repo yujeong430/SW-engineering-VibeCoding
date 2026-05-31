@@ -73,30 +73,30 @@ sequenceDiagram
     autonumber
     actor U as 일반 참여자
     participant FE as React SPA
-    participant GC as GroupController
-    participant GS as GroupService
+    participant AC as AuthController
+    participant AS as AuthService
     participant GR as GroupRepository
     participant SE as HttpSession
 
     U->>FE: "방장으로 전환" + PIN 4자리 입력
-    FE->>GC: POST /groups/{uuid}/auth { pin }
-    GC->>GS: authenticate(uuid, pin)
-    GS->>GR: findByUuid(uuid)
-    GR-->>GS: Group(pinHash)
+    FE->>AC: POST /groups/{uuid}/auth { pin }
+    AC->>AS: authenticate(uuid, pin)
+    AS->>GR: findByUuid(uuid)
+    GR-->>AS: Group(pinHash)
 
     alt 그룹 없음
-        GS-->>GC: throw GroupNotFound
-        GC-->>FE: 404 CommonResponse(success=false)
+        AS-->>AC: throw GroupNotFound
+        AC-->>FE: 404 CommonResponse(success=false)
     else 그룹 존재
-        GS->>GS: BCrypt.matches(pin, pinHash)
+        AS->>AS: BCrypt.matches(pin, pinHash)
         alt PIN 일치
-            GS->>SE: setAttribute("isHost:"+uuid, true)
-            GS-->>GC: 인증 성공
-            GC-->>FE: 200 CommonResponse(success=true)
+            AS->>SE: setAttribute("isHost:"+uuid, true)
+            AS-->>AC: 인증 성공
+            AC-->>FE: 200 CommonResponse(success=true)
             FE-->>U: 방장 전용 기능 노출
         else PIN 불일치
-            GS-->>GC: throw AuthFailed
-            GC-->>FE: 401 CommonResponse(success=false)
+            AS-->>AC: throw AuthFailed
+            AC-->>FE: 401 CommonResponse(success=false)
             Note over FE,U: 권한 미부여, 재입력 유도
         end
     end

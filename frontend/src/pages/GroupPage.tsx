@@ -17,6 +17,7 @@ import Avatar from '../components/Avatar'
 import Button from '../components/Button'
 import PinAuthSheet from '../components/PinAuthSheet'
 import ConfirmModal from '../components/ConfirmModal'
+import SettleConfirmSheet from '../components/SettleConfirmSheet'
 import type { CommonResponse } from '../types/common'
 import type { GroupDetail } from '../types/group'
 import { colors, typography, fontWeight, spacing, radius } from '../styles/tokens'
@@ -32,6 +33,7 @@ export default function GroupPage() {
   const [showAuth, setShowAuth] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [showDeleteGroup, setShowDeleteGroup] = useState(false)
+  const [showSettle, setShowSettle] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState('')
   const [addingMember, setAddingMember] = useState(false)
@@ -360,35 +362,41 @@ export default function GroupPage() {
       </div>
 
       <div style={styles.footer}>
-        {isHost && !isSettled && (
-          <Button onClick={() => navigate(`/groups/${uuid}/settle`)}>정산하기</Button>
-        )}
-        {!isSettled && (
-          <div style={styles.footerActions}>
-            <Button
-              variant={isHost ? 'text' : 'primary'}
-              fullWidth={!isHost}
-              onClick={() => navigate(`/groups/${uuid}/expenses/new`)}
-            >
-              <span style={styles.addBtnInner}>
-                <Plus size={18} strokeWidth={2.5} />
-                지출 추가
-              </span>
-            </Button>
+        {isSettled ? (
+          <Button onClick={() => navigate(`/groups/${uuid}/settlement`)}>
+            정산 결과 보기
+          </Button>
+        ) : (
+          <>
             {isHost && (
-              <Button
-                variant="text"
-                fullWidth={false}
-                onClick={() => {
-                  setManageMembers((v) => !v)
-                  setAddingMember(false)
-                  setMemberInput('')
-                }}
-              >
-                {manageMembers ? '관리 완료' : '멤버 관리'}
-              </Button>
+              <Button onClick={() => setShowSettle(true)}>정산하기</Button>
             )}
-          </div>
+            <div style={styles.footerActions}>
+              <Button
+                variant={isHost ? 'text' : 'primary'}
+                fullWidth={!isHost}
+                onClick={() => navigate(`/groups/${uuid}/expenses/new`)}
+              >
+                <span style={styles.addBtnInner}>
+                  <Plus size={18} strokeWidth={2.5} />
+                  지출 추가
+                </span>
+              </Button>
+              {isHost && (
+                <Button
+                  variant="text"
+                  fullWidth={false}
+                  onClick={() => {
+                    setManageMembers((v) => !v)
+                    setAddingMember(false)
+                    setMemberInput('')
+                  }}
+                >
+                  {manageMembers ? '관리 완료' : '멤버 관리'}
+                </Button>
+              )}
+            </div>
+          </>
         )}
       </div>
 
@@ -412,6 +420,16 @@ export default function GroupPage() {
             deleteGroup()
           }}
           onCancel={() => setShowDeleteGroup(false)}
+        />
+      )}
+
+      {showSettle && (
+        <SettleConfirmSheet
+          uuid={uuid}
+          expenseCount={group.expenses.length}
+          totalAmount={total}
+          onClose={() => setShowSettle(false)}
+          onSuccess={() => navigate(`/groups/${uuid}/settlement`)}
         />
       )}
     </div>

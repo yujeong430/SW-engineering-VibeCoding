@@ -51,6 +51,8 @@ export default function AccountRegisterPage() {
   const goBack = () => {
     if (from === 'expense') {
       navigate(`/groups/${uuid}`)
+    } else if (from === 'settlement') {
+      navigate(`/groups/${uuid}/settlement`)
     } else {
       navigate(-1)
     }
@@ -87,7 +89,7 @@ export default function AccountRegisterPage() {
     <div style={styles.container}>
       <AppHeader
         title={isEdit ? '계좌 수정' : '계좌 등록'}
-        onBack={from === 'expense' ? undefined : () => navigate(-1)}
+        onBack={from === 'expense' ? undefined : () => goBack()}
         right={
           from === 'expense' ? (
             <button style={styles.skipText} onClick={() => navigate(`/groups/${uuid}`)}>

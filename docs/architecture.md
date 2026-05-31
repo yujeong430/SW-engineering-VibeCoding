@@ -285,28 +285,38 @@ NFR-10(테스트 커버리지 80% 이상)을 달성하기 위해 계층별 테�
 
 ```
 src
-├── assets
 ├── components                    // 재사용 가능한 공통 컴포넌트
 │   ├── Button.tsx
+│   ├── Avatar.tsx
+│   ├── AppHeader.tsx
+│   ├── PinAuthSheet.tsx          // 방장 PIN 인증 바텀 시트
+│   ├── ConfirmModal.tsx          // 공용 확인 모달
+│   ├── SettleConfirmSheet.tsx    // 정산 확정 바텀 시트
 │   └── ...
 ├── pages                         // 라우트 단위 페이지
-│   ├── OnboardingPage.tsx        // 서비스 소개 + 그룹 생성하기 버튼
-│   ├── GroupPage.tsx             // 그룹 메인 (지출 목록, 멤버 목록)
+│   ├── OnboardingPage.tsx        // 서비스 소개
+│   ├── CreateGroupPage.tsx       // 그룹명·PIN 입력
+│   ├── MemberSetupPage.tsx       // 초기 멤버 등록
+│   ├── GroupPage.tsx             // 그룹 메인 (지출 목록, 방장 전환)
+│   ├── ExpenseCreatePage.tsx     // 지출 등록·수정 (공용)
+│   ├── AccountRegisterPage.tsx   // 계좌 등록·수정
 │   ├── SettlementPage.tsx        // 정산 결과 (송금 목록, 계좌 복사)
+│   ├── ExpenseHistoryPage.tsx    // 지출 내역 (읽기 전용, SETTLED)
 │   └── ...
-├── api                           // API 호출 함수
-│   ├── groupApi.ts
-│   └── ...
-├── hooks                         // 커스텀 훅
-│   └── ...
-├── types                         // TypeScript 타입 정의
-│   └── ...
-├── router
-│   └── index.tsx
+├── types                         // TypeScript 타입 정의 (도메인별 분리)
+│   ├── group.ts
+│   ├── expense.ts
+│   ├── member.ts
+│   ├── settlement.ts
+│   └── common.ts
+├── constants
+│   └── banks.ts                  // 은행 프리셋 목록
 ├── lib
-│   └── axios.ts                  // Axios 인스턴스 (withCredentials: true)
-└── styles
-    └── global.css
+│   ├── axios.ts                  // Axios 인스턴스 (withCredentials: true)
+│   └── format.ts                 // 금액 포맷 유틸
+├── styles
+│   └── tokens.ts                 // 디자인 토큰 (colors, typography, spacing …)
+└── App.tsx                       // 라우팅 정의 (React Router v6)
 ```
 
 ### 6.2 타입 정의 원칙
@@ -328,11 +338,18 @@ interface CommonResponse<T> {
 
 ### 6.3 라우팅 구조
 
-| 경로                       | 페이지         | 설명                                        |
-| -------------------------- | -------------- | ------------------------------------------- |
-| `/`                        | OnboardingPage | 서비스 소개 + 그룹 생성하기 버튼            |
-| `/groups/:uuid`            | GroupPage      | 그룹 메인 (지출 목록, 멤버 목록, 방장 전환) |
-| `/groups/:uuid/settlement` | SettlementPage | 정산 결과 (송금 목록, 계좌 복사)            |
+| 경로                                        | 페이지               | 설명                                        |
+| ------------------------------------------- | -------------------- | ------------------------------------------- |
+| `/`                                         | OnboardingPage       | 서비스 소개 + 그룹 생성하기 버튼            |
+| `/groups/new`                               | CreateGroupPage      | 그룹명·PIN 입력                             |
+| `/groups/new/members`                       | MemberSetupPage      | 초기 멤버 등록                              |
+| `/groups/new/done`                          | GroupCreatedPage     | 그룹 생성 완료 + 링크 공유                  |
+| `/groups/:uuid`                             | GroupPage            | 그룹 메인 (지출 목록, 멤버 목록, 방장 전환) |
+| `/groups/:uuid/expenses/new`                | ExpenseCreatePage    | 지출 등록                                   |
+| `/groups/:uuid/expenses/:expenseId/edit`    | ExpenseCreatePage    | 지출 수정 (생성·수정 공용)                  |
+| `/groups/:uuid/expenses`                    | ExpenseHistoryPage   | 지출 내역 읽기 전용 (SETTLED 전용)          |
+| `/groups/:uuid/settlement`                  | SettlementPage       | 정산 결과 (송금 목록, 계좌 복사)            |
+| `/groups/:uuid/members/:memberId/account`   | AccountRegisterPage  | 계좌 등록·수정                              |
 
 ### 6.4 API 통신
 
