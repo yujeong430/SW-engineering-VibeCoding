@@ -1,6 +1,7 @@
 package com.grouppay.domain.group.service;
 
 import com.grouppay.domain.expense.entity.Expense;
+import com.grouppay.domain.expense.entity.ExpenseShare;
 import com.grouppay.domain.expense.repository.ExpenseRepository;
 import com.grouppay.domain.expense.repository.ExpenseShareRepository;
 import com.grouppay.domain.group.dto.request.CreateGroupRequest;
@@ -21,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -69,9 +72,14 @@ public class GroupService {
         List<Member> members = memberRepository.findByGroup(group);
         List<Expense> expenses = expenseRepository.findByGroup(group);
 
+        // N+1 방지: 모든 지출의 분담 데이터를 한 번에 조회 후 메모리에서 그룹핑
+        Map<Long, List<ExpenseShare>> sharesByExpenseId = expenseShareRepository.findByExpenseIn(expenses)
+                .stream()
+                .collect(Collectors.groupingBy(s -> s.getExpense().getId()));
+
         List<GroupDetailResponse.ExpenseSummary> expenseSummaries = expenses.stream()
                 .map(expense -> new GroupDetailResponse.ExpenseSummary(
-                        expense, expenseShareRepository.findByExpense(expense)))
+                        expense, sharesByExpenseId.getOrDefault(expense.getId(), List.of())))
                 .toList();
 
         return new GroupDetailResponse(group, members, expenseSummaries, isHost);

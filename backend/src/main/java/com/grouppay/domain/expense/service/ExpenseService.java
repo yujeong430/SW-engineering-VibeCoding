@@ -19,9 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 @Slf4j
 @Service
@@ -33,6 +31,7 @@ public class ExpenseService {
     private final ExpenseShareRepository expenseShareRepository;
     private final MemberRepository memberRepository;
     private final GroupService groupService;
+    private final ExpenseShareCalculator expenseShareCalculator;
 
     @Transactional
     public ExpenseResponse createExpense(String uuid, CreateExpenseRequest request) {
@@ -52,7 +51,7 @@ public class ExpenseService {
                 .build();
         expenseRepository.save(expense);
 
-        List<ExpenseShare> shares = createShares(expense, shareMembers, request.getAmount());
+        List<ExpenseShare> shares = expenseShareCalculator.calculate(expense, shareMembers, request.getAmount());
         expenseShareRepository.saveAll(shares);
 
         return new ExpenseResponse(expense, shares);
@@ -87,7 +86,7 @@ public class ExpenseService {
         expenseShareRepository.deleteByExpense(expense);
         expenseShareRepository.flush(); // DELETE를 즉시 DB에 반영 후 INSERT (UK 중복 방지)
 
-        List<ExpenseShare> shares = createShares(expense, shareMembers, request.getAmount());
+        List<ExpenseShare> shares = expenseShareCalculator.calculate(expense, shareMembers, request.getAmount());
         expenseShareRepository.saveAll(shares);
 
         return new ExpenseResponse(expense, shares);
@@ -100,29 +99,6 @@ public class ExpenseService {
 
         Expense expense = findExpenseById(expenseId);
         expenseRepository.delete(expense);
-    }
-
-    private List<ExpenseShare> createShares(Expense expense, List<Member> members, int totalAmount) {
-        if (members.isEmpty()) {
-            throw new BusinessException(ErrorCode.EXPENSE_SHARE_EMPTY);
-        }
-
-        int count = members.size();
-        int base = (totalAmount / count / 10) * 10;
-        int remainder = totalAmount - base * count;
-
-        int randomIndex = new Random().nextInt(count);
-        List<ExpenseShare> shares = new ArrayList<>();
-
-        for (int i = 0; i < count; i++) {
-            int shareAmount = (i == randomIndex) ? base + remainder : base;
-            shares.add(ExpenseShare.builder()
-                    .expense(expense)
-                    .member(members.get(i))
-                    .shareAmount(shareAmount)
-                    .build());
-        }
-        return shares;
     }
 
     private void validateOpen(Group group) {
