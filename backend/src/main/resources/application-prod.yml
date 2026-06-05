@@ -1,0 +1,5 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update   # create 대신 update (데이터 유지)
+    show-sql: false

@@ -1,0 +1,41 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH into EC2 and deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            cd ~/grouppay
+
+            # 최신 코드 pull
+            git pull origin main
+
+            # .env 파일 생성 (Secrets에서 주입)
+            cat > .env << EOF
+            DOMAIN=${{ secrets.DOMAIN }}
+            DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            EOF
+
+            # 컨테이너 재빌드 및 재시작
+            docker compose up -d --build
+
+            # 사용하지 않는 이미지 정리
+            docker image prune -f
+
+            echo "✅ 배포 완료"

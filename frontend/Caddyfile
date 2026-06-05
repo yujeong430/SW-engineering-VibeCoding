@@ -1,0 +1,13 @@
+{$DOMAIN} {
+    # /api/* → Spring Boot
+    handle /api/* {
+        reverse_proxy spring-app:8080
+    }
+
+    # 나머지 → React SPA (index.html fallback)
+    handle {
+        root * /srv
+        try_files {path} /index.html
+        file_server
+    }
+}
