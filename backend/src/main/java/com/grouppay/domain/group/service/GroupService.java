@@ -14,6 +14,7 @@ import com.grouppay.domain.member.repository.MemberRepository;
 import com.grouppay.global.api.code.ErrorCode;
 import com.grouppay.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -51,6 +53,8 @@ public class GroupService {
                     .toList();
             memberRepository.saveAll(members);
         }
+
+        log.info("[GROUP] 그룹 생성 - uuid={}, name={}, memberCount={}", group.getUuid(), group.getName(), memberNames.size());
         return new GroupResponse(group);
     }
 
@@ -87,6 +91,7 @@ public class GroupService {
     public void deleteGroup(String uuid) {
         Group group = findGroupByUuid(uuid);
         groupRepository.delete(group);
+        log.info("[GROUP] 그룹 삭제 - uuid={}, name={}", uuid, group.getName());
     }
 
     public Group findGroupByUuid(String uuid) {

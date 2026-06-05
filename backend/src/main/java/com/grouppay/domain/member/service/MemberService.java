@@ -55,6 +55,10 @@ public class MemberService {
         Group group = groupService.findGroupByUuid(uuid);
         Member member = findMemberById(memberId);
 
+        if (!member.getGroup().getUuid().equals(uuid)) {
+            throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
+        }
+
         if (!expenseRepository.existsByGroupAndPayer_Id(group, memberId)) {
             throw new BusinessException(ErrorCode.MEMBER_NOT_EXPENSE_PAYER);
         }
