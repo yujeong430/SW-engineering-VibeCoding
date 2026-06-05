@@ -12,6 +12,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class SettlementCalculatorTest {
 
+    private final SettlementCalculator calculator = new SettlementCalculator();
+
     @Test
     @DisplayName("정상 정산 - 최소 송금 횟수 산출")
     void calculate_normal() {
@@ -22,7 +24,7 @@ class SettlementCalculatorTest {
                 3L, -30000
         );
 
-        List<SettlementCalculator.Transfer> transfers = SettlementCalculator.calculate(netBalances);
+        List<SettlementCalculator.Transfer> transfers = calculator.calculate(netBalances);
 
         assertThat(transfers).hasSize(2);
         assertThat(transfers).allMatch(t -> t.toMemberId() == 1L);
@@ -38,7 +40,7 @@ class SettlementCalculatorTest {
                 3L, -30000
         );
 
-        List<SettlementCalculator.Transfer> transfers = SettlementCalculator.calculate(netBalances);
+        List<SettlementCalculator.Transfer> transfers = calculator.calculate(netBalances);
 
         int totalSent = transfers.stream().mapToInt(SettlementCalculator.Transfer::amount).sum();
         int totalReceived = transfers.stream().mapToInt(SettlementCalculator.Transfer::amount).sum();
@@ -54,7 +56,7 @@ class SettlementCalculatorTest {
                 // 합계 30000 ≠ 0
         );
 
-        assertThatThrownBy(() -> SettlementCalculator.calculate(netBalances))
+        assertThatThrownBy(() -> calculator.calculate(netBalances))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -66,7 +68,7 @@ class SettlementCalculatorTest {
                 2L, 0
         );
 
-        List<SettlementCalculator.Transfer> transfers = SettlementCalculator.calculate(netBalances);
+        List<SettlementCalculator.Transfer> transfers = calculator.calculate(netBalances);
 
         assertThat(transfers).isEmpty();
     }
@@ -82,7 +84,7 @@ class SettlementCalculatorTest {
                 4L, -20000
         );
 
-        List<SettlementCalculator.Transfer> transfers = SettlementCalculator.calculate(netBalances);
+        List<SettlementCalculator.Transfer> transfers = calculator.calculate(netBalances);
 
         // 송금 합계 = 받는 합계 = 60000
         int totalAmount = transfers.stream().mapToInt(SettlementCalculator.Transfer::amount).sum();
@@ -101,7 +103,7 @@ class SettlementCalculatorTest {
                 3L, -30000  // C
         );
 
-        List<SettlementCalculator.Transfer> transfers = SettlementCalculator.calculate(netBalances);
+        List<SettlementCalculator.Transfer> transfers = calculator.calculate(netBalances);
 
         assertThat(transfers).hasSize(2);
         transfers.forEach(t -> assertThat(t.fromMemberId()).isNotEqualTo(1L));
@@ -117,7 +119,7 @@ class SettlementCalculatorTest {
                 3L, -30000  // C
         );
 
-        List<SettlementCalculator.Transfer> transfers = SettlementCalculator.calculate(netBalances);
+        List<SettlementCalculator.Transfer> transfers = calculator.calculate(netBalances);
 
         assertThat(transfers).hasSize(2);
         int totalAmount = transfers.stream().mapToInt(SettlementCalculator.Transfer::amount).sum();
@@ -134,7 +136,7 @@ class SettlementCalculatorTest {
                 2L, -50000
         );
 
-        List<SettlementCalculator.Transfer> transfers = SettlementCalculator.calculate(netBalances);
+        List<SettlementCalculator.Transfer> transfers = calculator.calculate(netBalances);
 
         assertThat(transfers).hasSize(1);
         assertThat(transfers.get(0).fromMemberId()).isEqualTo(2L);
@@ -152,7 +154,7 @@ class SettlementCalculatorTest {
                 3L, -30000
         );
 
-        List<SettlementCalculator.Transfer> transfers = SettlementCalculator.calculate(netBalances);
+        List<SettlementCalculator.Transfer> transfers = calculator.calculate(netBalances);
 
         assertThat(transfers).hasSize(1);
         transfers.forEach(t -> {
@@ -173,7 +175,7 @@ class SettlementCalculatorTest {
                 3L, -3330
         );
 
-        List<SettlementCalculator.Transfer> transfers = SettlementCalculator.calculate(netBalances);
+        List<SettlementCalculator.Transfer> transfers = calculator.calculate(netBalances);
 
         int totalAmount = transfers.stream().mapToInt(SettlementCalculator.Transfer::amount).sum();
         assertThat(totalAmount).isEqualTo(6660);

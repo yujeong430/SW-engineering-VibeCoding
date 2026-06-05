@@ -3,6 +3,7 @@ package com.grouppay.domain.settlement.service;
 import com.grouppay.global.api.code.ErrorCode;
 import com.grouppay.global.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -10,11 +11,12 @@ import java.util.List;
 import java.util.Map;
 
 @Slf4j
+@Component
 public class SettlementCalculator {
 
     public record Transfer(Long fromMemberId, Long toMemberId, int amount) {}
 
-    public static List<Transfer> calculate(Map<Long, Integer> netBalances) {
+    public List<Transfer> calculate(Map<Long, Integer> netBalances) {
         int total = netBalances.values().stream().mapToInt(Integer::intValue).sum();
         if (total != 0) {
             log.error("[SETTLEMENT] 순잔액 합계 정합성 오류 - total={}, balances={}", total, netBalances);
