@@ -130,7 +130,7 @@ public class ExpenseService {
     }
 
     private void validateMemberBelongsToGroup(Member member, Group group) {
-        if (!member.getGroup().getId().equals(group.getId())) {
+        if (!member.getGroup().getUuid().equals(group.getUuid())) {
             throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
         }
     }
