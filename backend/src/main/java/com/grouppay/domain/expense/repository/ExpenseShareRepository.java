@@ -10,5 +10,7 @@ public interface ExpenseShareRepository extends JpaRepository<ExpenseShare, Long
 
     List<ExpenseShare> findByExpense(Expense expense);
 
+    List<ExpenseShare> findByExpenseIn(List<Expense> expenses);
+
     void deleteByExpense(Expense expense);
 }

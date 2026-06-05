@@ -38,6 +38,7 @@ public class SettlementService {
     private final MemberRepository memberRepository;
     private final SettlementRepository settlementRepository;
     private final SettlementTransferRepository settlementTransferRepository;
+    private final SettlementCalculator settlementCalculator;
 
     @Transactional
     public SettlementResponse settle(String uuid) {
@@ -56,7 +57,7 @@ public class SettlementService {
         Map<Long, Integer> netBalances = calculateNetBalances(group, expenses);
 
         // 최소 송금 산출
-        List<SettlementCalculator.Transfer> calculatedTransfers = SettlementCalculator.calculate(netBalances);
+        List<SettlementCalculator.Transfer> calculatedTransfers = settlementCalculator.calculate(netBalances);
 
         // 정산 저장 + 그룹 상태 변경 (원자적)
         Settlement settlement = Settlement.builder()
@@ -106,16 +107,19 @@ public class SettlementService {
     private Map<Long, Integer> calculateNetBalances(Group group, List<Expense> expenses) {
         Map<Long, Integer> netBalances = new HashMap<>();
 
+        // N+1 방지: 모든 분담 데이터를 한 번에 조회
+        List<ExpenseShare> allShares = expenseShareRepository.findByExpenseIn(expenses);
+
         for (Expense expense : expenses) {
             Long payerId = expense.getPayer().getId();
             netBalances.merge(payerId, expense.getAmount(), Integer::sum);
-
-            List<ExpenseShare> shares = expenseShareRepository.findByExpense(expense);
-            for (ExpenseShare share : shares) {
-                Long memberId = share.getMember().getId();
-                netBalances.merge(memberId, -share.getShareAmount(), Integer::sum);
-            }
         }
+
+        for (ExpenseShare share : allShares) {
+            Long memberId = share.getMember().getId();
+            netBalances.merge(memberId, -share.getShareAmount(), Integer::sum);
+        }
+
         return netBalances;
     }
 
