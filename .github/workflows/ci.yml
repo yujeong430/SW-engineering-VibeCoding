@@ -7,6 +7,9 @@ on:
 jobs:
   # ── 백엔드 테스트 ──────────────────────────────────────
   test-backend:
+    permissions:
+      checks: write
+      pull-requests: write
     name: Backend Test
     runs-on: ubuntu-latest
 
