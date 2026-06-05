@@ -23,7 +23,8 @@
 6. 프론트엔드 상세 설계
 7. 배포 아키텍처
 8. CI/CD 파이프라인
-9. API 설계 원칙
+9. 보안 설정
+10. API 설계 원칙
 
 ---
 
@@ -45,7 +46,7 @@ SRS의 비기능 요구사항을 아키텍처 관점에서 매핑한다.
 | NFR-03 정산 금액 정확성 | 정산 계산을 서버 사이드에서만 수행, 결과를 settlements 테이블에 저장하여 고정 |
 | NFR-04 데이터 정합성    | 정산 확정 시 DB 트랜잭션으로 원자성 보장                                      |
 | NFR-07 링크 추측 방지   | UUID v4 사용 (128비트 무작위)                                                 |
-| NFR-08 방장 인증        | PIN BCrypt 해시 저장, 인증 성공 시 세션에 방장 권한 부여                      |
+| NFR-08 방장 인증        | PIN BCrypt 해시 저장, 인증 성공 시 세션에 방장 권한 부여, IP별 Rate Limiting(분당 5회)으로 브루트포스 방어 |
 | NFR-09 관심사 분리      | 3계층 아키텍처 (Presentation - Business - Data) 적용                          |
 | NFR-10 테스트 커버리지  | 비즈니스 로직을 Service 계층에 집중, 단위 테스트 용이하게 구성                |
 | NFR-11 컨테이너화       | Docker Compose로 전체 스택 단일 명령 실행                                     |
@@ -203,12 +204,12 @@ src/main/java/com/grouppay
 
 NFR-10(테스트 커버리지 80% 이상)을 달성하기 위해 계층별 테스트를 작성한다.
 
-| 테스트 종류 | 대상                   | 도구              |
-| ----------- | ---------------------- | ----------------- |
-| 단위 테스트 | `SettlementCalculator` | JUnit 5 + AssertJ |
-| 단위 테스트 | `*Service`             | JUnit 5 + Mockito |
-| 통합 테스트 | `*Controller`          | MockMvc           |
-| 통합 테스트 | Repository             | DataJpaTest       |
+| 테스트 종류 | 대상                   | 도구                           |
+| ----------- | ---------------------- | ------------------------------ |
+| 단위 테스트 | `SettlementCalculator` | JUnit 5 + AssertJ              |
+| 단위 테스트 | `*Service`             | JUnit 5 + Mockito              |
+| 통합 테스트 | 그룹 플로우 (7개)      | MockMvc + H2 + @SpringBootTest |
+| 통합 테스트 | 정산 플로우 (8개)      | MockMvc + H2 + @SpringBootTest |
 
 `SettlementCalculator`는 핵심 비즈니스 로직으로 아래 케이스를 집중 검증한다.
 
@@ -406,38 +407,90 @@ AWS EC2 단일 인스턴스에 Docker Compose로 전체 스택을 배포한다.
 
 ### 8.1 파이프라인 흐름
 
+**PR 생성 시 (ci.yml)**
 ```
-GitHub Push (main 브랜치)
+PR (feat/* 또는 fix/* → dev 또는 main)
        │
        ▼
-[GitHub Actions]
+[GitHub Actions — CI]
        │
-       ├── 1. 백엔드 빌드 & 테스트 (Gradle + JUnit)
-       │       └── 실패 시 파이프라인 중단
+       ├── 백엔드 테스트 (./gradlew test, H2 인메모리)
+       │       └── 실패 시 머지 차단
        │
-       ├── 2. 프론트엔드 빌드 (Vite + TypeScript 타입 검사)
-       │       └── 실패 시 파이프라인 중단
+       └── 프론트엔드 빌드 검증 (tsc && vite build)
+               └── 실패 시 머지 차단
+```
+
+**main 머지 시 (cd.yml)**
+```
+main 브랜치 push
        │
-       ├── 3. Docker 이미지 빌드
+       ▼
+[GitHub Actions — CD]
        │
-       └── 4. EC2 배포 (SSH → Docker Compose up)
+       ├── EC2 SSH 접속
+       ├── git pull origin main
+       ├── .env 생성 (GitHub Secrets 주입)
+       └── docker compose up -d --build
 ```
 
 ### 8.2 브랜치 전략
 
-| 브랜치      | 용도             | CI/CD 트리거         |
-| ----------- | ---------------- | -------------------- |
-| `main`      | 배포 기준 브랜치 | 빌드 + 테스트 + 배포 |
-| `develop`   | 개발 통합 브랜치 | 빌드 + 테스트        |
-| `feature/*` | 기능 개발 브랜치 | 테스트만             |
+| 브랜치   | 용도             | CI/CD 트리거            |
+| -------- | ---------------- | ----------------------- |
+| `main`   | 배포 기준 브랜치 | CD (EC2 자동 배포)      |
+| `dev`    | 개발 통합 브랜치 | CI (테스트 + 빌드 검증) |
+| `feat/*` | 기능 개발 브랜치 | CI (PR 생성 시)         |
+| `fix/*`  | 버그/보안 수정   | CI (PR 생성 시)         |
 
 ---
 
-## 9. API 설계 원칙
+## 9. 보안 설정
+
+### 9.1 CORS
+
+허용 출처를 서비스 도메인과 로컬 개발 환경으로 제한한다.
+
+| 환경      | 허용 Origin               |
+| --------- | ------------------------- |
+| 운영      | `https://grouppay.p-e.kr` |
+| 로컬 개발 | `http://localhost:*`      |
+
+`allowCredentials: true`로 세션 쿠키를 포함한 요청을 허용하므로, 와일드카드(`*`) 사용 시 CSRF 위험이 있어 명시적 도메인만 허용한다.
+
+### 9.2 PIN Rate Limiting
+
+`POST /api/v1/groups/{uuid}/auth` 엔드포인트에 IP별 슬라이딩 윈도우 방식의 Rate Limiting을 적용한다.
+
+| 항목      | 값            |
+| --------- | ------------- |
+| 윈도우    | 1분           |
+| 최대 시도 | 5회           |
+| 초과 시   | HTTP 429 반환 |
+
+4자리 숫자 PIN의 브루트포스(최대 10,000가지) 공격을 방어한다.
+
+### 9.3 세션
+
+- 타임아웃: 1시간 (`server.servlet.session.timeout=3600`)
+- 저장 방식: 서버 인메모리 (`spring.session.store-type=none`)
+- 방장 권한 키: `HOST_{uuid}` 형식으로 세션에 저장
+
+### 9.4 로깅
+
+| 레벨  | 대상                                                        |
+| ----- | ----------------------------------------------------------- |
+| INFO  | 그룹 생성/삭제, 정산 확정, PIN 인증 성공                    |
+| WARN  | PIN 인증 실패, 횟수 초과, 미인증 접근, 타 그룹 멤버 접근 시도 |
+| ERROR | 순잔액 정합성 오류, 미처리 예외                             |
+
+---
+
+## 10. API 설계 원칙
 
 상세 명세(요청/응답 형식, 파라미터, 에러 코드)는 별도 API 명세서에서 정의한다.
 
-### 9.1 설계 원칙
+### 10.1 설계 원칙
 
 - Base URL: `/api/v1`
 - 요청/응답 형식: `application/json`
@@ -447,7 +500,7 @@ GitHub Push (main 브랜치)
 - 에러 코드: 도메인 접두어 + 번호 형식
 - 방장 전용 기능: 세션에 방장 권한 없으면 인증 에러 반환
 
-### 9.2 엔드포인트 목록
+### 10.2 엔드포인트 목록
 
 **그룹**
 

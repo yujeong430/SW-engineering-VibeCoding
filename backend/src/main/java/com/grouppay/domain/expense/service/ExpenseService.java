@@ -15,6 +15,7 @@ import com.grouppay.domain.member.repository.MemberRepository;
 import com.grouppay.global.api.code.ErrorCode;
 import com.grouppay.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -38,7 +40,9 @@ public class ExpenseService {
         validateOpen(group);
 
         Member payer = findMemberById(request.getPayerId());
+        validateMemberBelongsToGroup(payer, group);
         List<Member> shareMembers = findShareMembers(request.getShareMemberIds());
+        shareMembers.forEach(m -> validateMemberBelongsToGroup(m, group));
 
         Expense expense = Expense.builder()
                 .group(group)
@@ -75,7 +79,9 @@ public class ExpenseService {
 
         Expense expense = findExpenseById(expenseId);
         Member payer = findMemberById(request.getPayerId());
+        validateMemberBelongsToGroup(payer, group);
         List<Member> shareMembers = findShareMembers(request.getShareMemberIds());
+        shareMembers.forEach(m -> validateMemberBelongsToGroup(m, group));
 
         expense.update(payer, request.getTitle(), request.getAmount());
         expenseShareRepository.deleteByExpense(expense);
@@ -122,6 +128,14 @@ public class ExpenseService {
     private void validateOpen(Group group) {
         if (group.isSettled()) {
             throw new BusinessException(ErrorCode.GROUP_ALREADY_SETTLED);
+        }
+    }
+
+    private void validateMemberBelongsToGroup(Member member, Group group) {
+        if (!member.getGroup().getUuid().equals(group.getUuid())) {
+            log.warn("[SECURITY] 다른 그룹 멤버 접근 시도 - memberId={}, memberGroupUuid={}, requestGroupUuid={}",
+                    member.getId(), member.getGroup().getUuid(), group.getUuid());
+            throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
         }
     }
 
