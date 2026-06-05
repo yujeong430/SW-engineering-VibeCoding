@@ -38,7 +38,9 @@ public class ExpenseService {
         validateOpen(group);
 
         Member payer = findMemberById(request.getPayerId());
+        validateMemberBelongsToGroup(payer, group);
         List<Member> shareMembers = findShareMembers(request.getShareMemberIds());
+        shareMembers.forEach(m -> validateMemberBelongsToGroup(m, group));
 
         Expense expense = Expense.builder()
                 .group(group)
@@ -75,7 +77,9 @@ public class ExpenseService {
 
         Expense expense = findExpenseById(expenseId);
         Member payer = findMemberById(request.getPayerId());
+        validateMemberBelongsToGroup(payer, group);
         List<Member> shareMembers = findShareMembers(request.getShareMemberIds());
+        shareMembers.forEach(m -> validateMemberBelongsToGroup(m, group));
 
         expense.update(payer, request.getTitle(), request.getAmount());
         expenseShareRepository.deleteByExpense(expense);
@@ -122,6 +126,12 @@ public class ExpenseService {
     private void validateOpen(Group group) {
         if (group.isSettled()) {
             throw new BusinessException(ErrorCode.GROUP_ALREADY_SETTLED);
+        }
+    }
+
+    private void validateMemberBelongsToGroup(Member member, Group group) {
+        if (!member.getGroup().getId().equals(group.getId())) {
+            throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
         }
     }
 
