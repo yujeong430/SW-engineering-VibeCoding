@@ -2,6 +2,7 @@ package com.grouppay.global.exception;
 
 import com.grouppay.global.api.CommonResponse;
 import com.grouppay.global.api.code.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -66,6 +68,7 @@ public class GlobalExceptionHandler {
     // 나머지 모든 예외 (500)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<CommonResponse<?>> handleException(Exception e) {
+        log.error("[ERROR] 처리되지 않은 예외 발생 - {}: {}", e.getClass().getSimpleName(), e.getMessage(), e);
         return ResponseEntity
                 .status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
                 .body(CommonResponse.fail(ErrorCode.INTERNAL_SERVER_ERROR));

@@ -12,9 +12,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/groups")
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public class AuthController {
 
         String clientIp = getClientIp(httpRequest);
         if (!pinRateLimiter.isAllowed(clientIp)) {
+            log.warn("[SECURITY] PIN 인증 횟수 초과 - ip={}, groupUuid={}", clientIp, uuid);
             throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS);
         }
 

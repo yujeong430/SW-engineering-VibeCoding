@@ -16,6 +16,7 @@ import com.grouppay.domain.settlement.repository.SettlementTransferRepository;
 import com.grouppay.global.api.code.ErrorCode;
 import com.grouppay.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -77,6 +79,8 @@ public class SettlementService {
 
         group.settle();
 
+        log.info("[SETTLEMENT] 정산 확정 - groupUuid={}, transferCount={}, totalExpenses={}",
+                uuid, transfers.size(), expenses.size());
         return new SettlementResponse(settlement, netBalances, transfers, memberMap);
     }
 
